@@ -58,7 +58,7 @@ wandermaze/
 - **Images**: Player character, traps, and tileset for the game environment.
 
 ## 📜 Credits
-- Developed by [Your Name]
+- Developed by [ ]
 - Inspired by classic puzzle games and platformers.
 
 ## 🐛 Issues
