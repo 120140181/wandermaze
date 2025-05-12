@@ -1,34 +1,47 @@
+import pygame
+import os
+
 class Level:
-    def __init__(self, level_data):
-        self.level_data = level_data
+    def __init__(self, player):
+        self.player = player
+        self.tile_size = player.tile_size
         self.tileset = self.load_tileset()
-        self.traps = self.load_traps()
-        self.player_start_position = self.find_player_start()
+        self.map_data = self.load_map()
 
     def load_tileset(self):
-        # Load the tileset image and return it
-        pass
+        path = "assets/images/tilesets/FG_Cellar_C.png"
+        tileset_image = pygame.image.load(path).convert_alpha()
+        tiles = []
 
-    def load_traps(self):
-        # Load traps from level data and return a list of Trap objects
-        pass
+        tiles_wide = tileset_image.get_width() // self.tile_size
+        tiles_high = tileset_image.get_height() // self.tile_size
 
-    def find_player_start(self):
-        # Find and return the starting position of the player in the level
-        pass
+        for y in range(tiles_high):
+            for x in range(tiles_wide):
+                rect = pygame.Rect(x * self.tile_size, y * self.tile_size, self.tile_size, self.tile_size)
+                tile = tileset_image.subsurface(rect)
+                tiles.append(tile)
 
-    def update(self, player):
-        # Update the level state, check for collisions with traps
-        pass
+        return tiles
 
-    def render(self, screen):
-        # Render the level tiles and traps on the screen
-        pass
+    def load_map(self):
+        # 0 = lantai, 1 = dinding, 2 = jebakan
+        return [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 2, 0, 1],
+            [1, 0, 1, 1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 0, 1, 0, 1],
+            [1, 0, 0, 0, 1, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1],
+        ]
 
-    def check_win_condition(self):
-        # Check if the player has reached the exit of the level
-        pass
-
-    def reset(self):
-        # Reset the level state for replay
-        pass
+    def draw(self, surface):
+        for y, row in enumerate(self.map_data):
+            for x, tile_id in enumerate(row):
+                if tile_id == 1:
+                    tile = self.tileset[1]  # Misal dinding
+                elif tile_id == 2:
+                    tile = self.tileset[2]  # Misal jebakan
+                else:
+                    tile = self.tileset[0]  # Lantai
+                surface.blit(tile, (x * self.tile_size, y * self.tile_size))

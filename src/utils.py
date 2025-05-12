@@ -1,41 +1,33 @@
-def load_assets():
-    """Load all necessary assets for the game."""
-    assets = {}
-    try:
-        assets['player_image'] = load_image('assets/player.png')
-        assets['background_music'] = load_sound('assets/background_music.mp3')
-    except Exception as e:
-        print(f"Error loading assets: {e}")
-    return assets
+import pygame
 
-def load_image(file_path):
-    """Load an image from the specified file path."""
+def load_image(path, colorkey=None):
+    """
+    Fungsi untuk memuat gambar dari path dengan dukungan transparansi.
+    """
     try:
-        image = pygame.image.load(file_path)
+        image = pygame.image.load(path).convert_alpha()
+        if colorkey is not None:
+            image.set_colorkey(colorkey)
         return image
     except pygame.error as e:
-        print(f"Unable to load image at {file_path}: {e}")
+        print(f"Gagal memuat gambar: {path} | {e}")
         return None
 
-def load_sound(file_path):
-    """Load a sound from the specified file path."""
-    try:
-        sound = pygame.mixer.Sound(file_path)
-        return sound
-    except pygame.error as e:
-        print(f"Unable to load sound at {file_path}: {e}")
-        return None
+def split_spritesheet(sheet, width, height):
+    """
+    Memotong spritesheet menjadi list frame berdasarkan ukuran tile.
+    """
+    frames = []
+    sheet_width, sheet_height = sheet.get_size()
+    for y in range(0, sheet_height, height):
+        for x in range(0, sheet_width, width):
+            rect = pygame.Rect(x, y, width, height)
+            frames.append(sheet.subsurface(rect))
+    return frames
 
-def check_collision(rect1, rect2):
-    """Check for collision between two rectangles."""
-    return rect1.colliderect(rect2)
-
-def reset_game_state():
-    """Reset the game state to its initial conditions."""
-    # Placeholder for resetting game variables
-    pass
-
-def display_message(screen, message, position, font, color=(255, 255, 255)):
-    """Display a message on the screen."""
-    text_surface = font.render(message, True, color)
-    screen.blit(text_surface, position)
+def draw_text(surface, text, pos, font, color=(255, 255, 255)):
+    """
+    Menampilkan teks di layar dengan font dan posisi tertentu.
+    """
+    text_surface = font.render(text, True, color)
+    surface.blit(text_surface, pos)

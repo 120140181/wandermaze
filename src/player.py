@@ -1,29 +1,57 @@
-class Player:
-    def __init__(self, x, y, speed):
-        self.x = x
-        self.y = y
-        self.speed = speed
-        self.image = self.load_image()
-        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+import pygame
+from utils import split_spritesheet
 
-    def load_image(self):
-        # Load the player image from assets
-        return pygame.image.load('assets/images/player.png').convert_alpha()
+TILE_SIZE = 32
 
-    def move(self, direction):
-        if direction == 'up':
-            self.y -= self.speed
-        elif direction == 'down':
-            self.y += self.speed
-        elif direction == 'left':
-            self.x -= self.speed
-        elif direction == 'right':
-            self.x += self.speed
-        
-        self.rect.topleft = (self.x, self.y)
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x, y, spritesheet):
+        super().__init__()
+        self.frames = split_spritesheet(spritesheet, TILE_SIZE, TILE_SIZE)
+        self.image = self.frames[0]
+        self.rect = self.image.get_rect(topleft=(x, y))
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+        self.pos = pygame.Vector2(x, y)
+        self.speed = 2
+        self.direction = pygame.Vector2(0, 0)
 
-    def check_collision(self, other_rect):
-        return self.rect.colliderect(other_rect)
+        self.reversed = False
+        self.reversed_timer = 0
+        self.checkpoint = self.pos.copy()
+
+    def update(self, keys, dt):
+        self.direction.x = 0
+        self.direction.y = 0
+
+        if keys[pygame.K_w]:
+            self.direction.y = -1
+        elif keys[pygame.K_s]:
+            self.direction.y = 1
+        if keys[pygame.K_a]:
+            self.direction.x = -1
+        elif keys[pygame.K_d]:
+            self.direction.x = 1
+
+        if self.reversed:
+            self.direction *= -1
+            self.reversed_timer -= dt
+            if self.reversed_timer <= 0:
+                self.reversed = False
+
+        self.pos += self.direction * self.speed
+        self.rect.topleft = self.pos
+
+    def teleport_to_start(self):
+        self.pos = pygame.Vector2(0, 0)
+        self.rect.topleft = self.pos
+
+    def reverse_controls(self, temporary=False):
+        self.reversed = True
+        if temporary:
+            self.reversed_timer = 3000  # in milliseconds
+
+    def set_checkpoint(self, pos):
+        self.checkpoint = pygame.Vector2(pos)
+
+    def reset_to_checkpoint(self):
+        self.pos = self.checkpoint.copy()
+        self.rect.topleft = self.pos

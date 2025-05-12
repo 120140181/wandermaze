@@ -19,9 +19,10 @@ wandermaze/
 │   ├── fonts/
 │   │   └── maze_font.ttf
 │   └── images/
-│       ├── player.png
-│       ├── trap.png
-│       └── tileset.png
+│       ├── player
+│       ├── trap
+│       ├── tileset
+│       └── levels
 ├── src/
 │   ├── main.py
 │   ├── player.py

@@ -1,23 +1,37 @@
-class Trap:
-    def __init__(self, position):
-        self.position = position
-        self.is_active = True
+import pygame
 
-    def activate(self):
-        self.is_active = True
+class Trap(pygame.sprite.Sprite):
+    def __init__(self, x, y, image, effect_type="reset"):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.effect_type = effect_type  # "reset", "teleport", "illusion"
 
-    def deactivate(self):
-        self.is_active = False
+    def trigger(self, player, level):
+        """
+        Efek yang terjadi ketika pemain menyentuh jebakan.
+        """
+        if self.effect_type == "reset":
+            print("‼️ Trap: Reset level!")
+            level.reset_level()
+        elif self.effect_type == "teleport":
+            print("🌀 Trap: Teleport player!")
+            player.teleport_to_start()
+        elif self.effect_type == "illusion":
+            print("🧠 Trap: Reverse controls!")
+            player.reverse_controls(temporary=True)
 
-    def trigger(self, player):
-        if self.is_active:
-            # Implement the effect on the player when the trap is triggered
-            player.take_damage()
-            return True
-        return False
+class FakeCheckpoint(pygame.sprite.Sprite):
+    def __init__(self, x, y, image, real=False):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.is_real = real
 
-    def draw(self, screen):
-        if self.is_active:
-            # Load and draw the trap image at its position
-            trap_image = pygame.image.load('assets/images/trap.png')
-            screen.blit(trap_image, self.position)
+    def activate(self, player):
+        if self.is_real:
+            print("✅ Checkpoint activated!")
+            player.set_checkpoint(self.rect.topleft)
+        else:
+            print("❌ Fake checkpoint! Resetting...")
+            player.teleport_to_start()
