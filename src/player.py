@@ -1,65 +1,60 @@
 import pygame
-import sys
 import os
-from player import Player
-
-# Path setup
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ASSETS_DIR = os.path.join(BASE_DIR, '..', 'assets')
-IMG_DIR = os.path.join(ASSETS_DIR, 'images')
-CHAR_DIR = os.path.join(IMG_DIR, 'Characters')
-TILESET_DIR = os.path.join(IMG_DIR, 'tilesets')
-
-# Setup Pygame
-pygame.init()
-screen = pygame.display.set_mode((640, 640))
-pygame.display.set_caption("Wandermaze")
-clock = pygame.time.Clock()
 
 TILE_SIZE = 32
+ANIMATION_SPEED = 0.60  # Semakin kecil, semakin cepat
 
-# Load tileset (satu baris tileset A5 untuk awal)
-tileset_image = pygame.image.load(os.path.join(TILESET_DIR, "FG_Cellar_A5.png")).convert_alpha()
-tiles = []
-for i in range(tileset_image.get_width() // TILE_SIZE):
-    tiles.append(tileset_image.subsurface((i * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE)))
+class Player(pygame.sprite.Sprite):
+    def __init__(self, assets_dir, start_pos=(5 * TILE_SIZE, 5 * TILE_SIZE)):
+        super().__init__()
+        self.images = {
+            "down": self.load_direction_images(os.path.join(assets_dir, "Knight_10_Walk_Down.png")),
+            "up": self.load_direction_images(os.path.join(assets_dir, "Knight_10_Walk_Up.png")),
+            "left": self.load_direction_images(os.path.join(assets_dir, "Knight_10_Walk_Left.png")),
+            "right": self.load_direction_images(os.path.join(assets_dir, "Knight_10_Walk_Right.png")),
+        }
 
-# Tilemap 10x10
-tilemap = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
-    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
-    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
-    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
-    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
-    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-]
+        self.direction = "down"
+        self.frame_index = 0
+        self.image = self.images[self.direction][int(self.frame_index)]
+        self.rect = self.image.get_rect(topleft=start_pos)
 
-# Inisialisasi player
-player = Player(CHAR_DIR)
-player_group = pygame.sprite.Group(player)
+        self.speed = 2
 
-# Game loop
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+    def load_direction_images(self, path):
+        sheet = pygame.image.load(path).convert_alpha()
+        frames = []
+        for i in range(sheet.get_width() // TILE_SIZE):
+            frame = sheet.subsurface((i * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE))
+            frames.append(frame)
+        return frames
 
-    keys = pygame.key.get_pressed()
-    player.update(keys)
+    def update(self, keys):
+        dx = dy = 0
 
-    # Gambar tilemap
-    for y, row in enumerate(tilemap):
-        for x, tile_id in enumerate(row):
-            if tile_id < len(tiles):
-                screen.blit(tiles[tile_id], (x * TILE_SIZE, y * TILE_SIZE))
+        if keys[pygame.K_LEFT]:
+            dx = -self.speed
+            self.direction = "left"
+        elif keys[pygame.K_RIGHT]:
+            dx = self.speed
+            self.direction = "right"
+        elif keys[pygame.K_UP]:
+            dy = -self.speed
+            self.direction = "up"
+        elif keys[pygame.K_DOWN]:
+            dy = self.speed
+            self.direction = "down"
 
-    # Gambar player
-    player_group.draw(screen)
+        # Perbarui posisi
+        self.rect.x += dx
+        self.rect.y += dy
 
-    pygame.display.flip()
-    clock.tick(60)
+        # Animasi jika bergerak
+        if dx != 0 or dy != 0:
+            self.frame_index += ANIMATION_SPEED
+            if self.frame_index >= len(self.images[self.direction]):
+                self.frame_index = 0
+        else:
+            self.frame_index = 0  # reset ke frame awal saat diam
+
+        self.image = self.images[self.direction][int(self.frame_index)]

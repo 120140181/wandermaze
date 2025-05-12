@@ -11,11 +11,30 @@ TILESET_DIR = os.path.join(IMG_DIR, 'tilesets')
 
 # Inisialisasi
 pygame.init()
-screen = pygame.display.set_mode((640, 640))
-pygame.display.set_caption("Wandermaze")
-clock = pygame.time.Clock()
 
 TILE_SIZE = 32
+
+# Array tilemap
+tilemap = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
+    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
+    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
+    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
+    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+]
+
+# Hitung ukuran layar berdasarkan ukuran tilemap
+SCREEN_WIDTH = len(tilemap[0]) * TILE_SIZE
+SCREEN_HEIGHT = len(tilemap) * TILE_SIZE
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Wandermaze")
+clock = pygame.time.Clock()
 
 # Load tileset (pakai tileset A5 dulu, nanti bisa gabungkan)
 tileset_image = pygame.image.load(os.path.join(TILESET_DIR, "FG_Cellar_A5.png")).convert_alpha()
@@ -31,20 +50,6 @@ for i in range(tileset_cols):
 player_img = pygame.image.load(os.path.join(CHAR_DIR, "Knight_10_Walk_Down.png")).convert_alpha()
 player_frame = player_img.subsurface((0, 0, TILE_SIZE, TILE_SIZE))
 player_pos = [5 * TILE_SIZE, 5 * TILE_SIZE]
-
-# Array tilemap
-tilemap = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
-    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
-    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
-    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
-    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
-    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-]
 
 # Loop utama
 while True:
