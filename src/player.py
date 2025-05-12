@@ -1,73 +1,65 @@
 import pygame
+import sys
 import os
+from player import Player
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, tile_size):
-        super().__init__()
-        self.tile_size = tile_size
-        self.x = x * tile_size
-        self.y = y * tile_size
-        self.speed = 2
-        self.direction = 'down'
-        self.anim_index = 0
-        self.anim_timer = 0
-        self.anim_delay = 100  # in milliseconds
+# Path setup
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(BASE_DIR, '..', 'assets')
+IMG_DIR = os.path.join(ASSETS_DIR, 'images')
+CHAR_DIR = os.path.join(IMG_DIR, 'Characters')
+TILESET_DIR = os.path.join(IMG_DIR, 'tilesets')
 
-        self.load_images()
-        self.image = self.animations[self.direction][0]
-        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+# Setup Pygame
+pygame.init()
+screen = pygame.display.set_mode((640, 640))
+pygame.display.set_caption("Wandermaze")
+clock = pygame.time.Clock()
 
-    def load_images(self):
-        base_path = "assets/images/Characters"
-        directions = ['down', 'up', 'left', 'right']
-        files = {
-            'down': 'Knight_10_Walk_Down.png',
-            'up': 'Knight_10_Walk_Up.png',
-            'left': 'Knight_10_Walk_Left.png',
-            'right': 'Knight_10_Walk_Right.png',
-        }
+TILE_SIZE = 32
 
-        self.animations = {}
+# Load tileset (satu baris tileset A5 untuk awal)
+tileset_image = pygame.image.load(os.path.join(TILESET_DIR, "FG_Cellar_A5.png")).convert_alpha()
+tiles = []
+for i in range(tileset_image.get_width() // TILE_SIZE):
+    tiles.append(tileset_image.subsurface((i * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE)))
 
-        for dir in directions:
-            sheet = pygame.image.load(os.path.join(base_path, files[dir])).convert_alpha()
-            frames = []
-            for i in range(4):
-                frame = sheet.subsurface((i * self.tile_size, 0, self.tile_size, self.tile_size))
-                frames.append(frame)
-            self.animations[dir] = frames
+# Tilemap 10x10
+tilemap = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
+    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
+    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
+    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
+    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+]
 
-    def handle_input(self, keys):
-        moved = False
-        if keys[pygame.K_LEFT]:
-            self.x -= self.speed
-            self.direction = 'left'
-            moved = True
-        elif keys[pygame.K_RIGHT]:
-            self.x += self.speed
-            self.direction = 'right'
-            moved = True
-        elif keys[pygame.K_UP]:
-            self.y -= self.speed
-            self.direction = 'up'
-            moved = True
-        elif keys[pygame.K_DOWN]:
-            self.y += self.speed
-            self.direction = 'down'
-            moved = True
+# Inisialisasi player
+player = Player(CHAR_DIR)
+player_group = pygame.sprite.Group(player)
 
-        self.rect.topleft = (self.x, self.y)
+# Game loop
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-        # Animasi hanya aktif jika bergerak
-        now = pygame.time.get_ticks()
-        if moved:
-            if now - self.anim_timer > self.anim_delay:
-                self.anim_timer = now
-                self.anim_index = (self.anim_index + 1) % len(self.animations[self.direction])
-        else:
-            self.anim_index = 0  # diam = frame 0
+    keys = pygame.key.get_pressed()
+    player.update(keys)
 
-        self.image = self.animations[self.direction][self.anim_index]
+    # Gambar tilemap
+    for y, row in enumerate(tilemap):
+        for x, tile_id in enumerate(row):
+            if tile_id < len(tiles):
+                screen.blit(tiles[tile_id], (x * TILE_SIZE, y * TILE_SIZE))
 
-    def draw(self, surface):
-        surface.blit(self.image, (self.x, self.y))
+    # Gambar player
+    player_group.draw(screen)
+
+    pygame.display.flip()
+    clock.tick(60)
