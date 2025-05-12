@@ -1,57 +1,73 @@
 import pygame
-from utils import split_spritesheet
-
-TILE_SIZE = 32
+import os
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, spritesheet):
+    def __init__(self, x, y, tile_size):
         super().__init__()
-        self.frames = split_spritesheet(spritesheet, TILE_SIZE, TILE_SIZE)
-        self.image = self.frames[0]
-        self.rect = self.image.get_rect(topleft=(x, y))
-
-        self.pos = pygame.Vector2(x, y)
+        self.tile_size = tile_size
+        self.x = x * tile_size
+        self.y = y * tile_size
         self.speed = 2
-        self.direction = pygame.Vector2(0, 0)
+        self.direction = 'down'
+        self.anim_index = 0
+        self.anim_timer = 0
+        self.anim_delay = 100  # in milliseconds
 
-        self.reversed = False
-        self.reversed_timer = 0
-        self.checkpoint = self.pos.copy()
+        self.load_images()
+        self.image = self.animations[self.direction][0]
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
 
-    def update(self, keys, dt):
-        self.direction.x = 0
-        self.direction.y = 0
+    def load_images(self):
+        base_path = "assets/images/Characters"
+        directions = ['down', 'up', 'left', 'right']
+        files = {
+            'down': 'Knight_10_Walk_Down.png',
+            'up': 'Knight_10_Walk_Up.png',
+            'left': 'Knight_10_Walk_Left.png',
+            'right': 'Knight_10_Walk_Right.png',
+        }
 
-        if keys[pygame.K_w]:
-            self.direction.y = -1
-        elif keys[pygame.K_s]:
-            self.direction.y = 1
-        if keys[pygame.K_a]:
-            self.direction.x = -1
-        elif keys[pygame.K_d]:
-            self.direction.x = 1
+        self.animations = {}
 
-        if self.reversed:
-            self.direction *= -1
-            self.reversed_timer -= dt
-            if self.reversed_timer <= 0:
-                self.reversed = False
+        for dir in directions:
+            sheet = pygame.image.load(os.path.join(base_path, files[dir])).convert_alpha()
+            frames = []
+            for i in range(4):
+                frame = sheet.subsurface((i * self.tile_size, 0, self.tile_size, self.tile_size))
+                frames.append(frame)
+            self.animations[dir] = frames
 
-        self.pos += self.direction * self.speed
-        self.rect.topleft = self.pos
+    def handle_input(self, keys):
+        moved = False
+        if keys[pygame.K_LEFT]:
+            self.x -= self.speed
+            self.direction = 'left'
+            moved = True
+        elif keys[pygame.K_RIGHT]:
+            self.x += self.speed
+            self.direction = 'right'
+            moved = True
+        elif keys[pygame.K_UP]:
+            self.y -= self.speed
+            self.direction = 'up'
+            moved = True
+        elif keys[pygame.K_DOWN]:
+            self.y += self.speed
+            self.direction = 'down'
+            moved = True
 
-    def teleport_to_start(self):
-        self.pos = pygame.Vector2(0, 0)
-        self.rect.topleft = self.pos
+        self.rect.topleft = (self.x, self.y)
 
-    def reverse_controls(self, temporary=False):
-        self.reversed = True
-        if temporary:
-            self.reversed_timer = 3000  # in milliseconds
+        # Animasi hanya aktif jika bergerak
+        now = pygame.time.get_ticks()
+        if moved:
+            if now - self.anim_timer > self.anim_delay:
+                self.anim_timer = now
+                self.anim_index = (self.anim_index + 1) % len(self.animations[self.direction])
+        else:
+            self.anim_index = 0  # diam = frame 0
 
-    def set_checkpoint(self, pos):
-        self.checkpoint = pygame.Vector2(pos)
+        self.image = self.animations[self.direction][self.anim_index]
 
-    def reset_to_checkpoint(self):
-        self.pos = self.checkpoint.copy()
-        self.rect.topleft = self.pos
+    def draw(self, surface):
+        surface.blit(self.image, (self.x, self.y))
