@@ -39,7 +39,7 @@ class Level:
         for y, row in enumerate(self.map_data):
             for x, tile_id in enumerate(row):
                 if tile_id == 1:
-                    tile = self.tileset[1]  # Misal dinding
+                    tile = self.tileset[4]  # Misal dinding
                 elif tile_id == 2:
                     tile = self.tileset[2]  # Misal jebakan
                 else:

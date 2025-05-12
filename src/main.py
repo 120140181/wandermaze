@@ -16,16 +16,16 @@ TILE_SIZE = 32
 
 # Array tilemap
 tilemap = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
-    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
-    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
-    [0, 1, 2, 3, 4, 4, 3, 2, 1, 0],
-    [0, 1, 2, 3, 3, 3, 3, 2, 1, 0],
-    [0, 1, 2, 2, 2, 2, 2, 2, 1, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+    [1, 0, 2, 1, 1, 1, 1, 2, 0, 1],
+    [1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+    [1, 0, 2, 1, 1, 1, 1, 2, 0, 1],
+    [1, 0, 2, 2, 0, 0, 2, 2, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
 
 # Hitung ukuran layar berdasarkan ukuran tilemap
@@ -36,8 +36,8 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Wandermaze")
 clock = pygame.time.Clock()
 
-# Load tileset (pakai tileset A5 dulu, nanti bisa gabungkan)
-tileset_image = pygame.image.load(os.path.join(TILESET_DIR, "FG_Cellar_A5.png")).convert_alpha()
+# Load tileset
+tileset_image = pygame.image.load(os.path.join(TILESET_DIR, "TS1.png")).convert_alpha()
 
 # Ambil tile per 32x32 dari satu baris tileset
 tiles = []
@@ -49,7 +49,17 @@ for i in range(tileset_cols):
 # Load karakter
 player_img = pygame.image.load(os.path.join(CHAR_DIR, "Knight_10_Walk_Down.png")).convert_alpha()
 player_frame = player_img.subsurface((0, 0, TILE_SIZE, TILE_SIZE))
-player_pos = [5 * TILE_SIZE, 5 * TILE_SIZE]
+player_pos = [TILE_SIZE, TILE_SIZE]  # Posisi awal pemain (x, y)
+
+# Fungsi collision
+def can_move(new_x, new_y):
+    tile_x = new_x // TILE_SIZE
+    tile_y = new_y // TILE_SIZE
+
+    if tile_x < 0 or tile_y < 0 or tile_x >= len(tilemap[0]) or tile_y >= len(tilemap):
+        return False
+
+    return tilemap[tile_y][tile_x] == 0 or tilemap[tile_y][tile_x] == 2
 
 # Loop utama
 while True:
@@ -58,16 +68,23 @@ while True:
             pygame.quit()
             sys.exit()
 
-    # Gerakan bebas tanpa collision
+    # Gerakan dengan collision detection
     keys = pygame.key.get_pressed()
+    new_x, new_y = player_pos[0], player_pos[1]
     if keys[pygame.K_LEFT]:
-        player_pos[0] -= 2
+        new_x -= 2
     if keys[pygame.K_RIGHT]:
-        player_pos[0] += 2
+        new_x += 2
     if keys[pygame.K_UP]:
-        player_pos[1] -= 2
+        new_y -= 2
     if keys[pygame.K_DOWN]:
-        player_pos[1] += 2
+        new_y += 2
+
+    # Periksa collision sebelum memperbarui posisi
+    if can_move(new_x, player_pos[1]):
+        player_pos[0] = new_x
+    if can_move(player_pos[0], new_y):
+        player_pos[1] = new_y
 
     # Gambar tilemap
     for y, row in enumerate(tilemap):
