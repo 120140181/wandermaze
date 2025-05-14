@@ -1,99 +1,116 @@
 import pygame
-import sys
-import os
+import json
+from pathlib import Path
 
-# Setup path dasar
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ASSETS_DIR = os.path.join(BASE_DIR, '..', 'assets')
-IMG_DIR = os.path.join(ASSETS_DIR, 'images')
-CHAR_DIR = os.path.join(IMG_DIR, 'Characters')
-TILESET_DIR = os.path.join(IMG_DIR, 'tilesets')
+# Constants
+SCREEN_WIDTH, SCREEN_HEIGHT = 500, 500
+TILE_SIZE = 16
+SCALE = 2
+SCALED_TILE_SIZE = TILE_SIZE * SCALE
 
-# Inisialisasi
+# Path setup
+BASE_DIR = Path(__file__).resolve().parent.parent
+LDTK_PATH = BASE_DIR / "assets" / "images" / "tilesets" / "levels.ldtk"
+TILESET_BASE_PATH = BASE_DIR / "assets" / "images" / "tilesets" / "0x72_DungeonTilesetII_v1.7"
+
+# Pygame init
 pygame.init()
-
-TILE_SIZE = 32
-
-# Array tilemap
-tilemap = [
-    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 2, 2, 0, 0, 2, 2, 0, 1],
-    [1, 0, 2, 1, 1, 1, 1, 2, 0, 1],
-    [1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    [1, 0, 2, 1, 1, 1, 1, 2, 0, 1],
-    [1, 0, 2, 2, 0, 0, 2, 2, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-]
-
-# Hitung ukuran layar berdasarkan ukuran tilemap
-SCREEN_WIDTH = len(tilemap[0]) * TILE_SIZE
-SCREEN_HEIGHT = len(tilemap) * TILE_SIZE
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Wandermaze")
+pygame.display.set_caption("Wandermaze - Multiple Tilesets")
 clock = pygame.time.Clock()
 
-# Load tileset
-tileset_image = pygame.image.load(os.path.join(TILESET_DIR, "TS1.png")).convert_alpha()
+# Load LDtk project
+with open(LDTK_PATH, "r", encoding="utf-8") as f:
+    ldtk_data = json.load(f)
 
-# Ambil tile per 32x32 dari satu baris tileset
-tiles = []
-tileset_cols = tileset_image.get_width() // TILE_SIZE
-for i in range(tileset_cols):
-    tile = tileset_image.subsurface((i * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE))
-    tiles.append(tile)
+level_data = next(level for level in ldtk_data["levels"] if level["identifier"] == "Level_0")
+layer_instances = level_data["layerInstances"]
 
-# Load karakter
-player_img = pygame.image.load(os.path.join(CHAR_DIR, "Knight_10_Walk_Down.png")).convert_alpha()
-player_frame = player_img.subsurface((0, 0, TILE_SIZE, TILE_SIZE))
-player_pos = [TILE_SIZE, TILE_SIZE]  # Posisi awal pemain (x, y)
+# Load all tilesets used in LDtk file
+def load_tileset_image(path):
+    image = pygame.image.load(path).convert_alpha()
+    tiles = []
+    image_width, image_height = image.get_size()
 
-# Fungsi collision
-def can_move(new_x, new_y):
-    tile_x = new_x // TILE_SIZE
-    tile_y = new_y // TILE_SIZE
+    for y in range(0, image_height, TILE_SIZE):
+        for x in range(0, image_width, TILE_SIZE):
+            tile = image.subsurface((x, y, TILE_SIZE, TILE_SIZE))
+            scaled_tile = pygame.transform.scale(tile, (TILE_SIZE * SCALE, TILE_SIZE * SCALE))
+            tiles.append(scaled_tile)
 
-    if tile_x < 0 or tile_y < 0 or tile_x >= len(tilemap[0]) or tile_y >= len(tilemap):
-        return False
+    return tiles
 
-    return tilemap[tile_y][tile_x] == 0 or tilemap[tile_y][tile_x] == 2
+# Map tilesetRelPath to list of tiles
+tileset_images = {}
+tileset_uid_map = {}
 
-# Loop utama
-while True:
+for def_set in ldtk_data["defs"]["tilesets"]:
+    rel_path = def_set.get("relPath")
+    uid = def_set["uid"]
+    if not rel_path:
+        continue
+    full_path = (TILESET_BASE_PATH / Path(rel_path).name).resolve()
+    if not full_path.exists():
+        print(f"Tileset not found: {full_path}")
+        continue
+    tileset_images[uid] = load_tileset_image(full_path)
+    tileset_uid_map[uid] = Path(rel_path).name  # optional debug
+
+print("Tilesets loaded:")
+for k in tileset_images:
+    print("-", k)
+
+# Dummy color entity markers
+ENTITY_COLORS = {
+    "Player_Spawn": (0, 0, 255),
+    "Checkpoint": (0, 255, 0),
+    "Trap": (255, 0, 0)
+}
+
+# Draw tile layer with matching tileset
+def draw_layer_tiles(layer):
+    tileset_uid = layer.get("__tilesetDefUid")
+    if tileset_uid is None or tileset_uid not in tileset_images:
+        print(f"[SKIP] No tileset for layer {layer['__identifier']}")
+        return
+    tileset = tileset_images[tileset_uid]
+
+    for tile in layer["gridTiles"]:
+        tile_id = tile["t"]
+        px = tile["px"]  # posisi pixel (belum diskalakan)
+        pos = (px[0] * SCALE, px[1] * SCALE)
+
+        if 0 <= tile_id < len(tileset):
+            screen.blit(tileset[tile_id], pos)
+        else:
+            print(f"[WARN] Tile ID {tile_id} out of range for tileset UID {tileset_uid}")
+
+# Draw entities as colored boxes
+def draw_entities(screen, layer):
+    for entity in layer.get("entityInstances", []):
+        x = entity["px"][0] * SCALE
+        y = entity["px"][1] * SCALE
+        identifier = entity["__identifier"]
+
+        color = ENTITY_COLORS.get(identifier, (255, 255, 255))  # default: white
+        pygame.draw.rect(screen, color, (x, y, SCALED_TILE_SIZE, SCALED_TILE_SIZE))
+
+# Main loop
+running = True
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            running = False
 
-    # Gerakan dengan collision detection
-    keys = pygame.key.get_pressed()
-    new_x, new_y = player_pos[0], player_pos[1]
-    if keys[pygame.K_LEFT]:
-        new_x -= 2
-    if keys[pygame.K_RIGHT]:
-        new_x += 2
-    if keys[pygame.K_UP]:
-        new_y -= 2
-    if keys[pygame.K_DOWN]:
-        new_y += 2
+    screen.fill((0, 0, 0))
 
-    # Periksa collision sebelum memperbarui posisi
-    if can_move(new_x, player_pos[1]):
-        player_pos[0] = new_x
-    if can_move(player_pos[0], new_y):
-        player_pos[1] = new_y
-
-    # Gambar tilemap
-    for y, row in enumerate(tilemap):
-        for x, tile_id in enumerate(row):
-            if tile_id < len(tiles):
-                screen.blit(tiles[tile_id], (x * TILE_SIZE, y * TILE_SIZE))
-
-    # Gambar karakter
-    screen.blit(player_frame, player_pos)
+    for layer in reversed(layer_instances):
+        if layer["__type"] == "Tiles":
+            draw_layer_tiles(layer)
+        elif layer["__type"] == "Entities":
+            draw_entities(screen, layer)
 
     pygame.display.flip()
     clock.tick(60)
+
+pygame.quit()
