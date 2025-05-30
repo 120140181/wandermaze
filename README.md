@@ -45,7 +45,7 @@
 
 - **[Fatkhan Aziez Suffi]** – Developer Utama, Desainer Game, Programmer
 - **[Dias Morello S]** -
-- **[Handialrizki]** -
+- **[Handialrizky]** - Desain mekanik gameplay
 - **[Taufiqur Rahman]** -
 
 ---
