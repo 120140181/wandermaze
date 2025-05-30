@@ -44,7 +44,7 @@
 ## 🧑‍💻 Kontributor
 
 - **[Fatkhan Aziez Suffi]** – Developer Utama, Desainer Game, Programmer
-- **[Dias Morello S]** -
+- **[Dias Morello S]** - Asset, Sound Design
 - **[Handialrizky]** - Desain mekanik gameplay
 - **[Taufiqur Rahman]** -
 
