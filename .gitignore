@@ -1,0 +1,42 @@
+# Folder besar dan sementara Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+MemoryCaptures/
+
+# File build
+*.apk
+*.aab
+*.exe
+*.zip
+
+# VS/IDE
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.user
+*.suo
+*.pidb
+*.booproj
+*.svd
+
+# Mac dan Windows file
+.DS_Store
+Thumbs.db
+
+# Rider
+.idea/
+*.sln.iml
+
+# Unity cache dan lock
+UnityGenerated/
+*.unitypackage
+*.lock
+*.lock.json
+
+# Git LFS (optional)
+.gitattributes
